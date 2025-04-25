@@ -50,51 +50,93 @@
 <body>
     <header>
         <h1>Météo Marine - Deauville</h1>
-        <p>Consultez les alertes marines pour la ville de Deauville</p>
+        <p>Consultez et gérez les alertes marines pour la ville de Deauville</p>
     </header>
     <main>
         <h2>Prochaines Alertes</h2>
-        <table>
+        <table id="alertsTable">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Date</th>
-                    <th>Heure</th>
                     <th>Type d'Alerte</th>
                     <th>Description</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>2023-10-15</td>
-                    <td>14:00</td>
-                    <td>Vague Submersive</td>
-                    <td>Risque de vagues importantes sur le littoral.</td>
-                </tr>
-                <tr>
-                    <td>2023-10-16</td>
-                    <td>09:00</td>
-                    <td>Vent Fort</td>
-                    <td>Rafales de vent atteignant 80 km/h.</td>
-                </tr>
-                <tr>
-                    <td>2023-10-17</td>
-                    <td>18:00</td>
-                    <td>Marée Haute</td>
-                    <td>Marée exceptionnellement haute prévue.</td>
-                </tr>
+                <!-- Les alertes seront insérées ici -->
             </tbody>
         </table>
+        <h3>Ajouter une nouvelle alerte</h3>
+        <form id="addAlertForm">
+            <input type="text" id="alertDate" placeholder="Date (YYYY-MM-DD)" required>
+            <input type="text" id="alertType" placeholder="Type d'Alerte" required>
+            <input type="text" id="alertDescription" placeholder="Description" required>
+            <button type="submit">Ajouter</button>
+        </form>
     </main>
     <footer>
         <p>&copy; 2023 Météo Marine Deauville. Tous droits réservés.</p>
     </footer>
+
+    <script>
+        const apiUrl = 'https://deauville.onrender.com';
+
+        // Charger les alertes
+        function loadAlerts() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(alerts => {
+                    const tableBody = document.querySelector('#alertsTable tbody');
+                    tableBody.innerHTML = '';
+                    alerts.forEach((alert, index) => {
+                        const row = `
+                            <tr>
+                                <td>${index}</td>
+                                <td>${alert.date || 'N/A'}</td>
+                                <td>${alert.type || 'N/A'}</td>
+                                <td>${alert.description || 'N/A'}</td>
+                                <td>
+                                    <button onclick="deleteAlert(${index})">Supprimer</button>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error('Erreur lors du chargement des alertes :', error));
+        }
+
+        // Ajouter une alerte
+        document.getElementById('addAlertForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newAlert = {
+                date: document.getElementById('alertDate').value,
+                type: document.getElementById('alertType').value,
+                description: document.getElementById('alertDescription').value
+            };
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAlert)
+            })
+            .then(() => {
+                loadAlerts();
+                this.reset();
+            })
+            .catch(error => console.error('Erreur lors de l\'ajout de l\'alerte :', error));
+        });
+
+        // Supprimer une alerte
+        function deleteAlert(id) {
+            fetch(`${apiUrl}?id=${id}`, { method: 'DELETE' })
+                .then(() => loadAlerts())
+                .catch(error => console.error('Erreur lors de la suppression de l\'alerte :', error));
+        }
+
+        // Charger les alertes au démarrage
+        loadAlerts();
+    </script>
 </body>
 </html>
-
-<script>
-    const apiUrl = 'https://deauville.onrender.com';
-    fetch(`${apiUrl}/endpoint`)
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error('Erreur :', error));
-</script>
